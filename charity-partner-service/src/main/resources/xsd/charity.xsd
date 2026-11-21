@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Contrat SOAP du charity-partner-service (contract-first).
+  Ce XSD est écrit AVANT le code : les classes Java et le WSDL en sont générés.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://foodrescue.com/charity"
+           targetNamespace="http://foodrescue.com/charity"
+           elementFormDefault="qualified">
+
+    <!-- ===== Types simples réutilisables ===== -->
+    <xs:simpleType name="CharityId">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="CH-[0-9]{4}"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="QuantityKg">
+        <xs:restriction base="xs:decimal">
+            <xs:minExclusive value="0"/>
+            <xs:maxInclusive value="10000"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="RegistrationStatus">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="REGISTERED"/>
+            <xs:enumeration value="RECEIPT_ISSUED"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- ===== Opération 1 : VerifyCharity ===== -->
+    <xs:element name="VerifyCharityRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="charityId" type="tns:CharityId"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="VerifyCharityResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="charityId" type="tns:CharityId"/>
+                <xs:element name="name" type="xs:string"/>
+                <xs:element name="region" type="xs:string"/>
+                <xs:element name="approved" type="xs:boolean"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <!-- ===== Opération 2 : RegisterDonation ===== -->
+    <xs:element name="RegisterDonationRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="donationId" type="xs:string"/>
+                <xs:element name="charityId" type="tns:CharityId"/>
+                <xs:element name="restaurantName" type="xs:string"/>
+                <xs:element name="foodType" type="xs:string"/>
+                <xs:element name="quantityKg" type="tns:QuantityKg"/>
+                <xs:element name="donationDate" type="xs:date"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="RegisterDonationResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="registrationId" type="xs:string"/>
+                <xs:element name="status" type="tns:RegistrationStatus"/>
+                <xs:element name="registeredAt" type="xs:dateTime"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <!-- ===== Opération 3 : IssueReceipt ===== -->
+    <xs:element name="IssueReceiptRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="registrationId" type="xs:string"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="IssueReceiptResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="receiptNumber" type="xs:string"/>
+                <xs:element name="registrationId" type="xs:string"/>
+                <xs:element name="charityName" type="xs:string"/>
+                <xs:element name="quantityKg" type="tns:QuantityKg"/>
+                <xs:element name="issuedAt" type="xs:dateTime"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <!-- ===== Détail du SOAP Fault ===== -->
+    <xs:element name="CharityFault">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="code" type="xs:string"/>
+                <xs:element name="message" type="xs:string"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>
