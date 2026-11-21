@@ -1,0 +1,130 @@
+name: foodrescue
+
+x-service-health: &service-health
+  interval: 10s
+  timeout: 5s
+  retries: 12
+  start_period: 40s
+
+services:
+  # ---------- Bases de données (une par service) ----------
+  donation-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: donationdb
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - donation-data:/var/lib/postgresql/data
+    networks: [foodrescue-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d donationdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  matching-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: matchingdb
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - matching-data:/var/lib/postgresql/data
+    networks: [foodrescue-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d matchingdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  charity-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: charitydb
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - charity-data:/var/lib/postgresql/data
+    networks: [foodrescue-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d charitydb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ---------- Services métier ----------
+  charity-partner-service:
+    build: ./charity-partner-service
+    environment:
+      DB_URL: jdbc:postgresql://charity-db:5432/charitydb
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "8083:8080"
+    depends_on:
+      charity-db:
+        condition: service_healthy
+    networks: [foodrescue-net]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q UP"]
+      <<: *service-health
+
+  distribution-matching-service:
+    build: ./distribution-matching-service
+    environment:
+      DB_URL: jdbc:postgresql://matching-db:5432/matchingdb
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "8082:8080"
+    depends_on:
+      matching-db:
+        condition: service_healthy
+    networks: [foodrescue-net]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q UP"]
+      <<: *service-health
+
+  food-donation-service:
+    build: ./food-donation-service
+    environment:
+      DB_URL: jdbc:postgresql://donation-db:5432/donationdb
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "8081:8080"
+    depends_on:
+      donation-db:
+        condition: service_healthy
+      distribution-matching-service:
+        condition: service_healthy
+      charity-partner-service:
+        condition: service_healthy
+    networks: [foodrescue-net]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q UP"]
+      <<: *service-health
+
+  # ---------- Point d'entrée ----------
+  api-gateway:
+    build: ./api-gateway
+    environment:
+      FOOD_DONATION_URL: http://food-donation-service:8080
+    ports:
+      - "8000:8080"
+    depends_on:
+      food-donation-service:
+        condition: service_healthy
+    networks: [foodrescue-net]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q UP"]
+      <<: *service-health
+
+networks:
+  foodrescue-net:
+
+volumes:
+  donation-data:
+  matching-data:
+  charity-data:
