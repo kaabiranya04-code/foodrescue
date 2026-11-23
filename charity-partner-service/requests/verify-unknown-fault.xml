@@ -1,0 +1,6 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:c="http://foodrescue.com/charity">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <c:VerifyCharityRequest><c:charityId>CH-9999</c:charityId></c:VerifyCharityRequest>
+  </soapenv:Body>
+</soapenv:Envelope>

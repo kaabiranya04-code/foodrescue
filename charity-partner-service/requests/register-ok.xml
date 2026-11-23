@@ -1,0 +1,6 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:c="http://foodrescue.com/charity">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <c:RegisterDonationRequest><c:donationId>D-1001</c:donationId><c:charityId>CH-0001</c:charityId><c:restaurantName>Boulangerie El Baraka</c:restaurantName><c:foodType>Khobz</c:foodType><c:quantityKg>20</c:quantityKg><c:donationDate>2026-11-21</c:donationDate></c:RegisterDonationRequest>
+  </soapenv:Body>
+</soapenv:Envelope>
