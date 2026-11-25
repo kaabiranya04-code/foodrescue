@@ -1,0 +1,6 @@
+# Fusionné automatiquement avec docker-compose.yml par "docker compose".
+# Expose le port gRPC du matching sur la machine pour les tests (grpcurl).
+services:
+  distribution-matching-service:
+    ports:
+      - "9090:9090"

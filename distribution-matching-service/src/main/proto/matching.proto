@@ -1,0 +1,52 @@
+// Contrat gRPC du distribution-matching-service (contract-first).
+syntax = "proto3";
+
+package foodrescue.matching.v1;
+
+option java_multiple_files = true;
+option java_package = "com.foodrescue.matching.grpc";
+option java_outer_classname = "MatchingProto";
+
+service MatchingService {
+  // Unary : trouve la meilleure association pour un don.
+  // Codes : OK, INVALID_ARGUMENT (requête invalide), NOT_FOUND (aucun candidat compatible),
+  //         DEADLINE_EXCEEDED (côté client si le deadline est dépassé).
+  rpc FindBestMatch(MatchRequest) returns (MatchResponse);
+
+  // Server streaming : suit la progression du matching étape par étape.
+  rpc StreamMatchingUpdates(MatchRequest) returns (stream MatchUpdate);
+}
+
+message MatchRequest {
+  string donation_id = 1;
+  string food_type = 2;          // ex. "khobz", "legumes", "fruits"
+  double quantity_kg = 3;        // ]0 ; 10000]
+  string region = 4;             // ex. "Tunis"
+  int32 hours_before_expiry = 5; // urgence : <= 6h favorise la même région
+}
+
+message MatchResponse {
+  string donation_id = 1;
+  string charity_id = 2;
+  string charity_name = 3;
+  double score = 4;              // 0..100
+  string reason = 5;
+}
+
+enum Stage {
+  STAGE_UNSPECIFIED = 0;
+  SEARCHING = 1;
+  CANDIDATES_FOUND = 2;
+  SCORING = 3;
+  MATCHED = 4;
+  NO_MATCH = 5;
+}
+
+message MatchUpdate {
+  string donation_id = 1;
+  Stage stage = 2;
+  string message = 3;
+  int32 progress_percent = 4;
+  int64 timestamp_epoch_ms = 5;
+  string charity_id = 6;         // renseigné uniquement pour MATCHED
+}
